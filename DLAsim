@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Apr 29 09:32:09 2021
+
+@author: noah01px2019
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+import random as rand
+from PIL import Image
+from matplotlib import animation
+import time
+
+
+size = 100 #Side length of lattice
+lattice = np.zeros((size,size))
+center = int(np.floor(size/2)) #Finding center of lattice
+lattice[center][center] = 1 #Values in array correspond to state of grid - 1 means stationary dot, 0 means the grid is empty
+maxdots = 1000 #Maximum dots for simulation
+counter = 1
+timeSteps = np.arange(0, maxdots)
+
+
+
+xcoords = np.zeros(maxdots) #Coordinates for every stationary particle
+ycoords = np.zeros(maxdots)
+xcoords[0] = center
+ycoords[0] = center
+frames = np.zeros(((maxdots,size,size))) #Frames for the animation
+frames[0] = lattice 
+t0 = time.time()
+maxhorizontal = np.zeros(maxdots)
+maxhorizontal[0] = 1
+while counter < maxdots:
+    side = rand.randint(1,4) #Determining where the dot first starts its walk
+    point = rand.randint(1,size-1)
+    if side == 1:
+        startingPoint = [0,point]
+    if side == 2:
+        startingPoint = [point-1,0]
+    if side == 3:
+        startingPoint = [size-1,point]
+    if side == 4:
+        startingPoint = [point-1,size-1]
+    
+    coordinates = startingPoint
+    status = 0 # 0 = not stationary
+    while lattice[coordinates[0]][coordinates[1]] == 0:
+        if coordinates[0] > 0:
+            if lattice[coordinates[0]-1][coordinates[1]] == 1:
+                lattice[coordinates[0]][coordinates[1]] = 1 #Turn into stationary point if it will come into contact with a stationary point
+                xcoords[counter] = coordinates[1] 
+                ycoords[counter] = coordinates[0]
+                frames[counter] = lattice #Storing the frame
+                counter += 1
+                break
+        if coordinates[0] < size-1:
+            if lattice[coordinates[0]+1][coordinates[1]] == 1:
+                lattice[coordinates[0]][coordinates[1]] = 1 #Turn into stationary point if it will come into contact with a stationary point
+                xcoords[counter] = coordinates[1] 
+                ycoords[counter] = coordinates[0]
+                frames[counter] = lattice #Storing the frame
+                counter += 1
+                break
+        if coordinates[1] > 0:
+            if lattice[coordinates[0]][coordinates[1]-1] == 1:
+                lattice[coordinates[0]][coordinates[1]] = 1 #Turn into stationary point if it will come into contact with a stationary point
+                xcoords[counter] = coordinates[1] 
+                ycoords[counter] = coordinates[0]
+                frames[counter] = lattice #Storing the frame
+                counter += 1
+                break
+        if coordinates[1] < size-1:
+            if lattice[coordinates[0]][coordinates[1]+1] == 1:
+                lattice[coordinates[0]][coordinates[1]] = 1 #Turn into stationary point if it will come into contact with a stationary point
+                xcoords[counter] = coordinates[1] 
+                ycoords[counter] = coordinates[0]
+                frames[counter] = lattice #Storing the frame
+                counter += 1
+                break
+        step = rand.randint(1,4) #Determining direction of step
+        if step == 1:
+            if coordinates[0] > size-2: #Checking to see if next step will walk out of bounds
+                coordinates[0] = size-2 #Reducing coordinate by 1 if next step will be out of bounds, equivalent to reflecting
+            else:
+                coordinates[0]+= 1
+        if step == 2: 
+            if coordinates[1] > size - 2:
+                coordinates[1] = size - 2   
+            else:
+                coordinates[1]+= 1
+        if step == 3:
+            if coordinates[0] < 1:
+                coordinates[0] = 1
+            else:
+                coordinates[0]-= 1
+        if step == 4:
+            if coordinates[1] < 1:
+                coordinates[1] = 1
+            else:
+                coordinates[1] -= 1
+
+for i in range(1, maxdots):
+    maxhorizontal[i] = max(xcoords[0:i])-min(xcoords[0:i])+1 #Finding the maximum width of cluster
+
+                
+img = Image.fromarray(lattice.astype('uint8')*255) #Displaying image for debugging (as the image will display long before the code finishes running)
+img.show()
+plt.imshow(lattice,cmap='gray')
+plt.show
+fig = plt.figure()
+def animationFunc(i): #Function for animation
+    return plt.imshow(frames[i],cmap='gray')
+
+    
+anim = animation.FuncAnimation(fig,animationFunc,frames=maxdots)
+anim.save('DLA.gif', fps = 30) #Process may take VERY LONG if lattice is large - 100x100 takes about two hours.
+
+plt.figure()
+plt.plot(timeSteps,maxhorizontal) #Plotting maximum width
+plt.xlabel('Time (Steps)') 
+plt.ylabel('Maximum Horizontal Width')
+plt.title('Maximum Width of DLA Cluster')
+
+t1 = time.time()
+t2 = round((t1-t0)/60,1)
+print('Finished in', t2, 'minutes.')
